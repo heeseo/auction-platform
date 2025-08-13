@@ -63,7 +63,7 @@ class AuctionServiceTest {
 
     @Test
     @DisplayName("Test placing a bid on an item")
-    void testPlaceBid() throws NoSuchFieldException, IllegalAccessException {
+    void testPlaceBid(){
 
         Item existingItem = createItemWithId(1L, "Existing Item", "Existing Description", 100.0);
 
