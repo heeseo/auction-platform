@@ -51,4 +51,8 @@ public class AuctionService {
         return itemRepository.findAll();
     }
 
+    public Item getItemById(Long id) {
+        return itemRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Item not found with id: " + id));
+    }
 }
