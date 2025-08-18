@@ -50,6 +50,27 @@ public class AuctionServiceIntegrationTest {
     }
 
     @Test
+    public void testAddItemWithEntity() {
+
+        Item item = new Item("Test Item", "Description", 100.0, LocalDateTime.now().plusDays(1));
+        Long itemId = auctionService.addItem(item);
+
+        assertThat(itemId).isNotNull();
+        assertThat(itemRepository.findById(itemId)).isPresent();
+        Item itemFound = itemRepository.findById(itemId).orElseThrow(() -> new IllegalArgumentException("Item not found with id: " + itemId));
+        assertThat(itemFound.getTitle()).isEqualTo("Test Item");
+        assertThat(itemFound.getDescription()).isEqualTo("Description");
+        assertThat(itemFound.getMinPrice()).isEqualTo(100.0);
+        assertThat(itemFound.getDeadline()).isAfter(LocalDateTime.now());
+        assertThat(itemFound.getBids()).isEmpty();
+
+        // Verify that the item is saved correctly
+        assertThat(itemRepository.findAll()).hasSize(1);
+        assertThat(itemRepository.findAll().get(0).getId()).isEqualTo(itemId);
+
+    }
+
+    @Test
     public void testPlaceBid() {
         Long itemId = auctionService.addItem(
                 "Test Item",

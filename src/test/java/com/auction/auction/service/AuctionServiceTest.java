@@ -62,6 +62,32 @@ class AuctionServiceTest {
     }
 
     @Test
+    @DisplayName("Test adding an item to the auction")
+    void testAddItemWithObject() {
+
+        when(itemRepository.save(any(Item.class))).thenAnswer(invocation -> {
+            Item toSave = invocation.getArgument(0);
+
+            // Simulate DB-generated ID via reflection
+            Field idField = Item.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(toSave, 1L);
+
+            return toSave;
+        });
+
+        Item item = new Item("Test Item", "Description", 100.0, LocalDateTime.now().plusDays(1));
+        Long itemId = auctionService.addItem(item);
+
+        verify(itemRepository).save(Mockito.any(Item.class));
+        verifyNoMoreInteractions(itemRepository);
+        verifyNoInteractions(bidRepository);
+
+        assertThat(itemId).isEqualTo(1L);
+
+    }
+
+    @Test
     @DisplayName("Test placing a bid on an item")
     void testPlaceBid(){
 
