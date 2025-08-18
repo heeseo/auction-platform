@@ -31,6 +31,12 @@ public class AuctionService {
     }
 
     @Transactional
+    public Long addItem(Item item) {
+        itemRepository.save(item);
+        return item.getId();
+    }
+
+    @Transactional
     public Long placeBid(Long itemId, double bidAmount, String bidderName) {
         // Logic to place a bid on an item
         Item item = itemRepository.findById(itemId)
