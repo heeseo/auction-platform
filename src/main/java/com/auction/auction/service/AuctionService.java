@@ -2,8 +2,10 @@ package com.auction.auction.service;
 
 import com.auction.auction.model.Bid;
 import com.auction.auction.model.Item;
+import com.auction.auction.model.User;
 import com.auction.auction.repository.BidRepository;
 import com.auction.auction.repository.ItemRepository;
+import com.auction.auction.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,7 @@ public class AuctionService {
 
     private final ItemRepository itemRepository;
     private final BidRepository bidRepository;
+    private final UserRepository userRepository;
 
     // This class will handle the business logic for auction operations
     // such as creating auctions, placing bids, and retrieving auction data.
@@ -25,7 +28,7 @@ public class AuctionService {
     @Transactional
     public Long addItem(String itemName, String description, double startingPrice, LocalDateTime deadline) {
         // Logic to add a new item to the auction
-        Item item = new Item(itemName, description, startingPrice, deadline);
+        Item item = Item.createItem(itemName, description, startingPrice, deadline, null);
         itemRepository.save(item);
         return item.getId();
     }
@@ -37,12 +40,14 @@ public class AuctionService {
     }
 
     @Transactional
-    public Long placeBid(Long itemId, double bidAmount, String bidderName) {
+    public Long placeBid(Long itemId, double bidAmount, Long bidderId) {
         // Logic to place a bid on an item
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new IllegalArgumentException("Item not found with id: " + itemId));
+        User bidder = userRepository.findById(bidderId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + bidderId));
 
-        Bid bid = new Bid(bidAmount, bidderName, LocalDateTime.now(), item);
+        Bid bid = Bid.createBid(bidAmount, LocalDateTime.now(), item, bidder);
         bidRepository.save(bid);
         return bid.getId();
     }
