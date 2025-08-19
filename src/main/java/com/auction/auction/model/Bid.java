@@ -17,18 +17,37 @@ public class Bid {
     private Long id;
 
     private Double amount;
-    private String bidderName;
     private LocalDateTime bidTime;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id")
     private Item item;
 
-    public Bid(double amount, String bidderName, LocalDateTime bidTime, Item item) {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User bidder;
+
+    protected Bid(double amount, LocalDateTime bidTime, Item item, User bidder) {
         this.amount = amount;
-        this.bidderName = bidderName;
         this.bidTime = bidTime;
         this.item = item;
+        this.bidder = bidder;
+    }
+
+    public static Bid createBid(double amount, LocalDateTime bidTime, Item item, User bidder) {
+        Bid bid = new Bid(amount, bidTime, item, bidder);
+        item.addBid(bid);
+        bidder.addBid(bid);
+        return bid;
+    }
+
+    public void setItem(Item item) {
+        this.item = item;
         item.addBid(this);
+    }
+
+    public void setBidder(User bidder) {
+        this.bidder = bidder;
+        bidder.addBid(this);
     }
 }
