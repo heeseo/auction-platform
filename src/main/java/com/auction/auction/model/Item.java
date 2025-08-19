@@ -5,7 +5,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.text.Bidi;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,15 +25,30 @@ public class Item {
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL)
     private List<Bid> bids = new ArrayList<>();
 
-    public Item(String title, String description, double minPrice, LocalDateTime deadline) {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User seller;
+
+    protected Item(String title, String description, double minPrice, LocalDateTime deadline, User seller) {
         this.title = title;
         this.description = description;
         this.minPrice = minPrice;
         this.deadline = deadline;
+        this.seller = seller;
     }
 
-    public int addBid(Bid bid) {
+    public static Item createItem(String title, String description, double minPrice, LocalDateTime deadline, User seller) {
+        Item item = new Item(title, description, minPrice, deadline, seller);
+        item.setSeller(seller);
+        return item;
+    }
+
+    public void setSeller(User seller) {
+        this.seller = seller;
+        seller.addItemForSale(this);
+    }
+
+    public void addBid(Bid bid) {
         this.bids.add(bid);
-        return this.bids.size();
     }
 }
