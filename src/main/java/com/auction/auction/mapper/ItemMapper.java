@@ -3,6 +3,7 @@ package com.auction.auction.mapper;
 import com.auction.auction.dto.ItemRequest;
 import com.auction.auction.dto.ItemResponse;
 import com.auction.auction.model.Item;
+import com.auction.auction.model.User;
 
 import java.time.LocalDateTime;
 
@@ -21,12 +22,13 @@ public class ItemMapper {
                 .build();
     }
 
-    public static Item toEntity(ItemRequest itemRequest) {
-        return new Item(
+    public static Item toEntity(ItemRequest itemRequest, User user) {
+        return Item.createItem(
                 itemRequest.getTitle(),
                 itemRequest.getDescription(),
                 itemRequest.getMinPrice(),
-                LocalDateTime.parse(itemRequest.getDeadline())
+                LocalDateTime.parse(itemRequest.getDeadline()),
+                user
         );
     }
 }
