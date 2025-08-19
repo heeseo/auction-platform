@@ -1,8 +1,10 @@
 package com.auction.auction.service;
 
 import com.auction.auction.model.Item;
+import com.auction.auction.model.User;
 import com.auction.auction.repository.BidRepository;
 import com.auction.auction.repository.ItemRepository;
+import com.auction.auction.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +30,9 @@ class AuctionServiceTest {
     @Mock
     private BidRepository bidRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private AuctionService auctionService;
 
@@ -46,12 +51,9 @@ class AuctionServiceTest {
             return toSave;
         });
 
-        Long itemId = auctionService.addItem(
-                "Test Item",
-                "Description",
-                100.0,
-                LocalDateTime.now().plusDays(1)
-        );
+        Item item = Item.createItem("Test Item", "Description", 100.0, LocalDateTime.now().plusDays(1), createUserWithId(1L));
+
+        Long itemId = auctionService.addItem(item);
 
         verify(itemRepository).save(Mockito.any(Item.class));
         verifyNoMoreInteractions(itemRepository);
@@ -76,7 +78,7 @@ class AuctionServiceTest {
             return toSave;
         });
 
-        Item item = new Item("Test Item", "Description", 100.0, LocalDateTime.now().plusDays(1));
+        Item item = Item.createItem("Test Item", "Description", 100.0, LocalDateTime.now().plusDays(1), createUserWithId(1L));
         Long itemId = auctionService.addItem(item);
 
         verify(itemRepository).save(Mockito.any(Item.class));
@@ -92,8 +94,10 @@ class AuctionServiceTest {
     void testPlaceBid(){
 
         Item existingItem = createItemWithId(1L, "Existing Item", "Existing Description", 100.0);
+        User existingUser = createUserWithId(2L);
 
         when(itemRepository.findById(1L)).thenReturn(java.util.Optional.of(existingItem));
+        when(userRepository.findById(2L)).thenReturn(java.util.Optional.of(existingUser));
         when(bidRepository.save(any())).thenAnswer(invocation -> {
             Object bid = invocation.getArgument(0);
             Field idField = bid.getClass().getDeclaredField("id");
@@ -102,7 +106,7 @@ class AuctionServiceTest {
             return bid;
         });
 
-        Long bidId = auctionService.placeBid(1L, 150.0, "Bidder");
+        Long bidId = auctionService.placeBid(existingItem.getId(), 150.0, existingUser.getId());
 
         verify(itemRepository).findById(1L);
         verify(bidRepository).save(Mockito.any());
@@ -111,9 +115,20 @@ class AuctionServiceTest {
         assertThat(bidId).isEqualTo(1L);
 
         assertThat(existingItem.getBids()).isNotEmpty();
-        assertThat(existingItem.getBids().get(0).getBidderName()).isEqualTo("Bidder");
+        assertThat(existingItem.getBids().get(0).getBidder()).isEqualTo(existingUser);
+        assertThat(existingItem.getBids().get(0).getId()).isEqualTo(1L);
         assertThat(existingItem.getBids().get(0).getAmount()).isEqualTo(150.0);
         assertThat(existingItem.getBids().get(0).getItem()).isEqualTo(existingItem);
+    }
+
+    private static User createUserWithId(Long userId) {
+        User user = User.builder()
+                .email("testemail")
+                .username("Test User")
+                .password("testpassword")
+                .build();
+        ReflectionTestUtils.setField(user, "id", userId);
+        return user;
     }
 
     @Test
@@ -149,7 +164,8 @@ class AuctionServiceTest {
     }
 
     private static Item createItemWithId(Long id, String title, String description, double minPrice) {
-        Item item = new Item(title, description, minPrice, LocalDateTime.now().plusDays(1));
+        User seller = User.builder().username("sel ler").email("seller@example.com").password("pass").build();
+        Item item = Item.createItem(title, description, minPrice, LocalDateTime.now().plusDays(1), seller);
         ReflectionTestUtils.setField(item, "id", id);
         return item;
     }
