@@ -24,6 +24,7 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable) // CSRF 비활성화 (API 테스트용)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/users").permitAll() // 사용자 등록 API는 인증 없이 접근 허용
                         .anyRequest().authenticated() // 모든 요청 인증 필요
                 )
                 .httpBasic(Customizer.withDefaults()); // Basic Auth 사용
@@ -47,16 +48,5 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    // test purpose UserDetailsService (InMemory)
-    @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-        UserDetails user = User.builder()
-                .username("testuser")
-                .password(passwordEncoder.encode("testpass"))
-                .roles("USER")
-                .build();
-        return new InMemoryUserDetailsManager(user);
     }
 }
