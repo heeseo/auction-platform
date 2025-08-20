@@ -46,7 +46,7 @@ public class AuctionController {
         return ItemMapper.toResponse(item);
     }
 
-    @PostMapping("/items/{id}/bid")
+    @PostMapping("/items/{id}/bids")
     public Long placeBid(@PathVariable Long id, @RequestParam double bidAmount, @AuthenticationPrincipal User user) {
         log.info("Placing bid on item with id: {}, bidAmount: {}", id, bidAmount);
         log.info("Placing bid by user: {}, {}", user.getId(), user.getUsername());
