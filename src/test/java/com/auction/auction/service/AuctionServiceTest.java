@@ -1,5 +1,6 @@
 package com.auction.auction.service;
 
+import com.auction.auction.model.Bid;
 import com.auction.auction.model.Item;
 import com.auction.auction.model.User;
 import com.auction.auction.repository.BidRepository;
@@ -119,6 +120,80 @@ class AuctionServiceTest {
         assertThat(existingItem.getBids().get(0).getId()).isEqualTo(1L);
         assertThat(existingItem.getBids().get(0).getAmount()).isEqualTo(150.0);
         assertThat(existingItem.getBids().get(0).getItem()).isEqualTo(existingItem);
+    }
+
+    @Test
+    @DisplayName("Test placing a bid on an item with deadline check")
+    void testPlaceBidWithDeadlineCheck() {
+        Item existingItem = createItemWithId(1L, "Existing Item", "Existing Description", 100.0);
+        User existingUser = createUserWithId(2L);
+
+        // Set the deadline to a past time
+        ReflectionTestUtils.setField(existingItem, "deadline", LocalDateTime.now().minusDays(1));
+
+        when(itemRepository.findById(1L)).thenReturn(java.util.Optional.of(existingItem));
+        when(userRepository.findById(2L)).thenReturn(java.util.Optional.of(existingUser));
+
+        assertThatThrownBy(() -> auctionService.placeBid(existingItem.getId(), 150.0, existingUser.getId()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Cannot place a bid on an item after its deadline.");
+
+        verify(itemRepository).findById(1L);
+        verifyNoMoreInteractions(itemRepository, bidRepository);
+        verifyNoInteractions(bidRepository);
+
+        assertThat(existingItem.getBids()).isEmpty();
+        assertThat(bidRepository.count()).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("Test placing a bid on an item with insufficient amount")
+    void testPlaceBidWithInsufficientAmount() {
+        Item existingItem = createItemWithId(1L, "Existing Item", "Existing Description", 100.0);
+        User existingUser = createUserWithId(2L);
+
+        when(itemRepository.findById(1L)).thenReturn(java.util.Optional.of(existingItem));
+        when(userRepository.findById(2L)).thenReturn(java.util.Optional.of(existingUser));
+
+        // Simulate an existing bid of 150.0
+        createBidWithId(1L, 150.0, existingItem, existingUser);
+
+        assertThatThrownBy(() -> auctionService.placeBid(existingItem.getId(), 140.0, existingUser.getId()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Bid amount must be higher than the current highest bid.");
+
+        verify(itemRepository).findById(1L);
+        verifyNoMoreInteractions(itemRepository, bidRepository);
+        verifyNoInteractions(bidRepository);
+
+        assertThat(existingItem.getBids()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Test placing a bid with amount less than minimum price")
+    void testPlaceBidWithAmountLessThanMinimumPrice() {
+        Item existingItem = createItemWithId(1L, "Existing Item", "Existing Description", 100.0);
+        User existingUser = createUserWithId(2L);
+
+        when(itemRepository.findById(1L)).thenReturn(java.util.Optional.of(existingItem));
+        when(userRepository.findById(2L)).thenReturn(java.util.Optional.of(existingUser));
+
+        assertThatThrownBy(() -> auctionService.placeBid(existingItem.getId(), 50.0, existingUser.getId()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Bid amount must be higher than the current highest bid.");
+
+        verify(itemRepository).findById(1L);
+        verifyNoMoreInteractions(itemRepository, bidRepository);
+        verifyNoInteractions(bidRepository);
+
+        assertThat(existingItem.getBids()).isEmpty();
+        assertThat(bidRepository.count()).isEqualTo(0L);
+    }
+
+    private Bid createBidWithId(long id, double amount, Item item, User bidder) {
+        Bid bid = Bid.createBid(amount, LocalDateTime.now(), item, bidder);
+        ReflectionTestUtils.setField(bid, "id", id);
+        return bid;
     }
 
     private static User createUserWithId(Long userId) {

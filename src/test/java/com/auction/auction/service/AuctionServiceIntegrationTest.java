@@ -7,6 +7,7 @@ import com.auction.auction.repository.BidRepository;
 import com.auction.auction.repository.ItemRepository;
 import com.auction.auction.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -88,6 +89,42 @@ public class AuctionServiceIntegrationTest {
         assertThat(itemFound.getBids()).hasSize(1);
         assertThat(itemFound.getBids().get(0).getId()).isEqualTo(bidId);
         assertThat(itemFound.getBids().get(0)).isEqualTo(bid);
+    }
+
+    @Test
+    public void testPlaceBidOnExpiredItem() {
+        Item item = Item.createItem("Expired Item", "Description", 100.0, LocalDateTime.now().minusDays(1), seller);
+        itemRepository.save(item);
+
+        assertThatThrownBy(() -> auctionService.placeBid(item.getId(), 150.0, bidder.getId()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Cannot place a bid on an item after its deadline.");
+    }
+
+    @Test
+    public void testPlaceBidWithInsufficientAmount() {
+        Item item = Item.createItem("Test Item", "Description", 100.0, LocalDateTime.now().plusDays(1), seller);
+        itemRepository.save(item);
+
+        // Attempt to place a bid lower than the minimum price
+        assertThatThrownBy(() -> auctionService.placeBid(item.getId(), 50.0, bidder.getId()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Bid amount must be higher than the current highest bid.");
+    }
+
+    @Test
+    @DisplayName("Test placing a bid with amount lower than the current highest bid")
+    public void testPlaceBidWithInsufficientAmount2(){
+        Item item = Item.createItem("Test Item", "Description", 100.0, LocalDateTime.now().plusDays(1), seller);
+        itemRepository.save(item);
+
+        // Place an initial bid
+        auctionService.placeBid(item.getId(), 150.0, bidder.getId());
+
+        // Attempt to place a lower bid
+        assertThatThrownBy(() -> auctionService.placeBid(item.getId(), 140.0, bidder.getId()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Bid amount must be higher than the current highest bid.");
     }
 
     @Test
