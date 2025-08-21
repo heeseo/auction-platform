@@ -47,6 +47,21 @@ public class AuctionService {
         User bidder = userRepository.findById(bidderId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + bidderId));
 
+        // Check deadline
+        if (item.getDeadline().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Cannot place a bid on an item after its deadline.");
+        }
+
+        // Check if the bid amount is higher than the current highest bid or minimum price
+        double highestBid = item.getBids().stream()
+                .mapToDouble(Bid::getAmount)
+                .max()
+                .orElse(item.getMinPrice());
+
+        if (bidAmount <= highestBid) {
+            throw new IllegalArgumentException("Bid amount must be higher than the current highest bid.");
+        }
+
         Bid bid = Bid.createBid(bidAmount, LocalDateTime.now(), item, bidder);
         bidRepository.save(bid);
         return bid.getId();
