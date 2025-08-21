@@ -22,12 +22,23 @@ public class Item {
     private Double minPrice;
     private LocalDateTime deadline;
 
-    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL)
+    @Enumerated(EnumType.STRING)
+    private AuctionStatus status = AuctionStatus.OPEN;
+
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Bid> bids = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "seller_id")
     private User seller;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "winner_id")
+    private User winner;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bid_id")
+    private Bid winningBid;
 
     protected Item(String title, String description, double minPrice, LocalDateTime deadline, User seller) {
         this.title = title;
@@ -50,5 +61,16 @@ public class Item {
 
     public void addBid(Bid bid) {
         this.bids.add(bid);
+    }
+
+    public void changeStatus(AuctionStatus status) {
+        this.status = status;
+    }
+
+    public void finalizeAuction(Bid highestBid) {
+        if (highestBid == null) return;
+
+        this.winner = highestBid.getBidder();
+        this.winningBid = highestBid;
     }
 }

@@ -1,5 +1,6 @@
 package com.auction.auction.service;
 
+import com.auction.auction.model.AuctionStatus;
 import com.auction.auction.model.Bid;
 import com.auction.auction.model.Item;
 import com.auction.auction.model.User;
@@ -236,6 +237,52 @@ class AuctionServiceTest {
         verifyNoInteractions(bidRepository);
 
         assertThat(items).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Test closing auctions that have expired")
+    void testCloseExpiredAuctions() {
+        Item expiredItem = createItemWithId(1L, "Expired Item", "Expired Description", 100.0);
+        expiredItem.changeStatus(AuctionStatus.OPEN);
+        ReflectionTestUtils.setField(expiredItem, "deadline", LocalDateTime.now().minusDays(1));
+
+        when(itemRepository.findAllByDeadlineBeforeAndStatus(any(LocalDateTime.class), eq(AuctionStatus.OPEN)))
+                .thenReturn(List.of(expiredItem));
+
+        auctionService.closeExpiredAuctions();
+
+        verify(itemRepository).findAllByDeadlineBeforeAndStatus(any(LocalDateTime.class), eq(AuctionStatus.OPEN));
+        verifyNoMoreInteractions(itemRepository, bidRepository);
+
+        assertThat(expiredItem.getStatus()).isEqualTo(AuctionStatus.CLOSED);
+    }
+
+    @Test
+    @DisplayName("Test winning bid after auction closure")
+    void testWinningBidAfterAuctionClosure() {
+        Item item = createItemWithId(1L, "Test Item", "Description", 100.0);
+        User seller = createUserWithId(2L);
+        item.changeStatus(AuctionStatus.OPEN);
+        ReflectionTestUtils.setField(item, "deadline", LocalDateTime.now().minusDays(1));
+
+        User bidder = createUserWithId(3L);
+        Bid losingBid = createBidWithId(1L, 200.0, item, bidder);
+
+        User winningBidder = createUserWithId(4L);
+        Bid winningBid = createBidWithId(2L, 250.0, item, winningBidder);
+
+        when(itemRepository.findAllByDeadlineBeforeAndStatus(any(LocalDateTime.class), eq(AuctionStatus.OPEN)))
+                .thenReturn(List.of(item));
+
+        auctionService.closeExpiredAuctions();
+
+        verify(itemRepository).findAllByDeadlineBeforeAndStatus(any(LocalDateTime.class), eq(AuctionStatus.OPEN));
+        verifyNoMoreInteractions(itemRepository, bidRepository);
+
+        assertThat(item.getStatus()).isEqualTo(AuctionStatus.CLOSED);
+        assertThat(item.getWinner()).isEqualTo(winningBidder);
+        assertThat(item.getWinningBid()).isEqualTo(winningBid);
+
     }
 
     private static Item createItemWithId(Long id, String title, String description, double minPrice) {
