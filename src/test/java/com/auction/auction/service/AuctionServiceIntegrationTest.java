@@ -1,11 +1,13 @@
 package com.auction.auction.service;
 
+import com.auction.auction.model.AuctionStatus;
 import com.auction.auction.model.Bid;
 import com.auction.auction.model.Item;
 import com.auction.auction.model.User;
 import com.auction.auction.repository.BidRepository;
 import com.auction.auction.repository.ItemRepository;
 import com.auction.auction.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,8 @@ public class AuctionServiceIntegrationTest {
     UserRepository userRepository;
     @Autowired
     AuctionService auctionService;
+    @Autowired
+    EntityManager entityManager;
 
     private User seller;
     private User bidder;
@@ -139,6 +143,59 @@ public class AuctionServiceIntegrationTest {
         assertThat(items).hasSize(2);
         assertThat(items.get(0).getTitle()).isEqualTo("Item 1");
         assertThat(items.get(1).getTitle()).isEqualTo("Item 2");
+    }
+
+    @Test
+    @DisplayName("Test closing expired auctions")
+    public void testCloseExpiredAuctions() {
+        Item item1 = Item.createItem("Expired Item 1", "Description 1", 100.0, LocalDateTime.now().minusDays(1), seller);
+        Item item2 = Item.createItem("Active Item", "Description 2", 200.0, LocalDateTime.now().plusDays(1), seller);
+        auctionService.addItem(item1);
+        auctionService.addItem(item2);
+
+        // Close expired auctions
+        auctionService.closeExpiredAuctions();
+
+        // Verify that the expired item is closed
+        assertThat(itemRepository.findById(item1.getId())).isPresent();
+        assertThat(itemRepository.findById(item1.getId())).get()
+                .extracting(Item::getStatus)
+                .isEqualTo(AuctionStatus.CLOSED);
+        // Verify that the active item is still open
+        assertThat(itemRepository.findById(item2.getId())).isPresent();
+        assertThat(itemRepository.findById(item2.getId())).get()
+                .extracting(Item::getStatus)
+                .isEqualTo(AuctionStatus.OPEN);
+    }
+
+    @Test
+    @DisplayName("Test finalizing auction with bids")
+    public void testFinalizeAuctionWithBids() {
+
+        Item item = Item.createItem("Auction Item", "Description", 100.0, LocalDateTime.now().plusDays(1), seller);
+        auctionService.addItem(item);
+
+        // Place bids
+        auctionService.placeBid(item.getId(), 150.0, bidder.getId());
+        auctionService.placeBid(item.getId(), 200.0, bidder.getId());
+
+        // Simulate the auction deadline passing
+        ReflectionTestUtils.setField(item, "deadline", LocalDateTime.now().minusDays(1));
+
+        // Close the auction
+        auctionService.closeExpiredAuctions();
+
+        // Verify that the item is closed and has a winner
+        assertThat(itemRepository.findById(item.getId())).isPresent();
+        Item closedItem = itemRepository.findById(item.getId()).get();
+        assertThat(closedItem.getStatus()).isEqualTo(AuctionStatus.CLOSED);
+        assertThat(closedItem.getWinner()).isNotNull();
+        assertThat(closedItem.getWinningBid()).isNotNull();
+        assertThat(closedItem.getWinningBid().getAmount()).isEqualTo(200.0);
+        assertThat(closedItem.getWinner().getId()).isEqualTo(bidder.getId());
+        assertThat(closedItem.getBids()).hasSize(2);
+        assertThat(closedItem.getBids().get(0).getAmount()).isEqualTo(150.0);
+        assertThat(closedItem.getBids().get(1).getAmount()).isEqualTo(200.0);
     }
 
 }
