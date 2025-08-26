@@ -16,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.*;
@@ -56,7 +57,7 @@ public class AuctionServiceIntegrationTest {
         assertThat(itemFound.getTitle()).isEqualTo("Test Item");
         assertThat(itemFound.getDescription()).isEqualTo("Description");
         assertThat(itemFound.getMinPrice()).isEqualTo(100.0);
-        assertThat(itemFound.getDeadline()).isAfter(LocalDateTime.now());
+        assertThat(itemFound.getDeadline()).isAfter(Instant.now());
         assertThat(itemFound.getBids()).isEmpty();
 
         // Verify that the item is saved correctly
@@ -97,7 +98,7 @@ public class AuctionServiceIntegrationTest {
 
     @Test
     public void testPlaceBidOnExpiredItem() {
-        Item item = Item.createItem("Expired Item", "Description", 100.0, LocalDateTime.now().minusDays(1), seller);
+        Item item = Item.createItem("Expired Item", "Description", 100.0, getMinusDays(), seller);
         itemRepository.save(item);
 
         assertThatThrownBy(() -> auctionService.placeBid(item.getId(), 150.0, bidder.getId()))
@@ -148,7 +149,7 @@ public class AuctionServiceIntegrationTest {
     @Test
     @DisplayName("Test closing expired auctions")
     public void testCloseExpiredAuctions() {
-        Item item1 = Item.createItem("Expired Item 1", "Description 1", 100.0, LocalDateTime.now().minusDays(1), seller);
+        Item item1 = Item.createItem("Expired Item 1", "Description 1", 100.0, getMinusDays(), seller);
         Item item2 = Item.createItem("Active Item", "Description 2", 200.0, LocalDateTime.now().plusDays(1), seller);
         auctionService.addItem(item1);
         auctionService.addItem(item2);
@@ -180,7 +181,7 @@ public class AuctionServiceIntegrationTest {
         auctionService.placeBid(item.getId(), 200.0, bidder.getId());
 
         // Simulate the auction deadline passing
-        ReflectionTestUtils.setField(item, "deadline", LocalDateTime.now().minusDays(1));
+        ReflectionTestUtils.setField(item, "deadline", getMinusDays());
 
         // Close the auction
         auctionService.closeExpiredAuctions();
@@ -196,6 +197,10 @@ public class AuctionServiceIntegrationTest {
         assertThat(closedItem.getBids()).hasSize(2);
         assertThat(closedItem.getBids().get(0).getAmount()).isEqualTo(150.0);
         assertThat(closedItem.getBids().get(1).getAmount()).isEqualTo(200.0);
+    }
+
+    private static Instant getMinusDays() {
+        return Instant.now().minusSeconds(86400);
     }
 
 }

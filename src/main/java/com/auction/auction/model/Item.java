@@ -2,9 +2,11 @@ package com.auction.auction.model;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +22,8 @@ public class Item {
     private String title;
     private String description;
     private Double minPrice;
-    private LocalDateTime deadline;
+    private Instant deadline;
+    private String imageUrl;
 
     @Enumerated(EnumType.STRING)
     private AuctionStatus status = AuctionStatus.OPEN;
@@ -40,16 +43,25 @@ public class Item {
     @JoinColumn(name = "bid_id")
     private Bid winningBid;
 
-    protected Item(String title, String description, double minPrice, LocalDateTime deadline, User seller) {
+    @Builder
+    protected Item(String title, String description, double minPrice, Instant deadline, User seller, String imageUrl) {
         this.title = title;
         this.description = description;
         this.minPrice = minPrice;
         this.deadline = deadline;
         this.seller = seller;
+        this.imageUrl = imageUrl;
+    }
+
+    public static Item createItem(String title, String description, double minPrice, Instant deadline, User seller) {
+        Item item = new Item(title, description, minPrice, deadline, seller, null);
+        item.setSeller(seller);
+        return item;
     }
 
     public static Item createItem(String title, String description, double minPrice, LocalDateTime deadline, User seller) {
-        Item item = new Item(title, description, minPrice, deadline, seller);
+        Instant instantDeadline = deadline.atZone(java.time.ZoneId.systemDefault()).toInstant();
+        Item item = new Item(title, description, minPrice, instantDeadline, seller, null);
         item.setSeller(seller);
         return item;
     }

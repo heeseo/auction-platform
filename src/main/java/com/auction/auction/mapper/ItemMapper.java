@@ -5,6 +5,7 @@ import com.auction.auction.dto.ItemResponse;
 import com.auction.auction.model.Item;
 import com.auction.auction.model.User;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 public class ItemMapper {
@@ -23,12 +24,13 @@ public class ItemMapper {
     }
 
     public static Item toEntity(ItemRequest itemRequest, User user) {
-        return Item.createItem(
-                itemRequest.getTitle(),
-                itemRequest.getDescription(),
-                itemRequest.getMinPrice(),
-                LocalDateTime.parse(itemRequest.getDeadline()),
-                user
-        );
+        return Item.builder()
+                .title(itemRequest.getTitle())
+                .description(itemRequest.getDescription())
+                .minPrice(itemRequest.getMinPrice())
+                .deadline(Instant.parse(itemRequest.getDeadline()))
+                .seller(user)
+                .imageUrl(itemRequest.getImageUrl())
+                .build();
     }
 }

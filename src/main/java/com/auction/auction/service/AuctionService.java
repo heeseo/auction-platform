@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -28,7 +29,7 @@ public class AuctionService {
     // such as creating auctions, placing bids, and retrieving auction data.
 
     @Transactional
-    public Long addItem(String itemName, String description, double startingPrice, LocalDateTime deadline) {
+    public Long addItem(String itemName, String description, double startingPrice, Instant deadline) {
         // Logic to add a new item to the auction
         Item item = Item.createItem(itemName, description, startingPrice, deadline, null);
         itemRepository.save(item);
@@ -50,7 +51,7 @@ public class AuctionService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + bidderId));
 
         // Check deadline
-        if (item.getDeadline().isBefore(LocalDateTime.now())) {
+        if (item.getDeadline().isBefore(Instant.now())) {
             throw new IllegalArgumentException("Cannot place a bid on an item after its deadline.");
         }
 
@@ -64,7 +65,7 @@ public class AuctionService {
             throw new IllegalArgumentException("Bid amount must be higher than the current highest bid.");
         }
 
-        Bid bid = Bid.createBid(bidAmount, LocalDateTime.now(), item, bidder);
+        Bid bid = Bid.createBid(bidAmount, Instant.now(), item, bidder);
         bidRepository.save(bid);
         return bid.getId();
     }
@@ -81,7 +82,7 @@ public class AuctionService {
     @Transactional
     public void closeExpiredAuctions() {
         // Logic to close auctions that have expired
-        List<Item> expiredItems = itemRepository.findAllByDeadlineBeforeAndStatus(LocalDateTime.now(), AuctionStatus.OPEN);
+        List<Item> expiredItems = itemRepository.findAllByDeadlineBeforeAndStatus(Instant.now(), AuctionStatus.OPEN);
         for (Item item : expiredItems) {
             item.changeStatus(AuctionStatus.CLOSED);
             //find the highest bid and set the winner
