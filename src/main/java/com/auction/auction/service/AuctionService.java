@@ -1,5 +1,6 @@
 package com.auction.auction.service;
 
+import com.auction.auction.dto.ItemWithCurrentPrice;
 import com.auction.auction.model.AuctionStatus;
 import com.auction.auction.model.Bid;
 import com.auction.auction.model.Item;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -94,5 +96,16 @@ public class AuctionService {
         item.getBids().stream()
                 .max(Comparator.comparingDouble(Bid::getAmount))
                 .ifPresent(item::finalizeAuction);
+    }
+
+    public List<ItemWithCurrentPrice> getAllItemsWithCurrentPrice() {
+        List<Item> items = itemRepository.findAll();
+        return items.stream()
+                .map(item -> {
+                    double currentPrice = bidRepository.findMaxAmountByItemId(item.getId())
+                            .orElse(item.getMinPrice());
+                    return new ItemWithCurrentPrice(item, currentPrice);
+                })
+                .toList();
     }
 }
