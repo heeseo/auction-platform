@@ -22,11 +22,21 @@ public class AuctionController {
 
     private final AuctionService auctionService;
 
-    @GetMapping("/items")
-    public List<ItemResponse> getAllItems() {
+    @GetMapping("/v1/items")
+    public List<ItemResponse> getAllItemsV1() {
         log.info("Fetching all auction items");
         // This endpoint retrieves all items available in the auction.
         return auctionService.getAllItems()
+                .stream()
+                .map(ItemMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/items")
+    public List<ItemResponse> getAllItems() {
+        log.info("Fetching all auction items with price");
+        // This endpoint retrieves all items available in the auction.
+        return auctionService.getAllItemsWithCurrentPrice()
                 .stream()
                 .map(ItemMapper::toResponse)
                 .collect(Collectors.toList());

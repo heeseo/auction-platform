@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -17,7 +18,7 @@ public class Bid {
     private Long id;
 
     private Double amount;
-    private LocalDateTime bidTime;
+    private Instant bidTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id")
@@ -27,15 +28,23 @@ public class Bid {
     @JoinColumn(name = "user_id")
     private User bidder;
 
-    protected Bid(double amount, LocalDateTime bidTime, Item item, User bidder) {
+    protected Bid(double amount, Instant bidTime, Item item, User bidder) {
         this.amount = amount;
         this.bidTime = bidTime;
         this.item = item;
         this.bidder = bidder;
     }
 
-    public static Bid createBid(double amount, LocalDateTime bidTime, Item item, User bidder) {
+    public static Bid createBid(double amount, Instant bidTime, Item item, User bidder) {
         Bid bid = new Bid(amount, bidTime, item, bidder);
+        item.addBid(bid);
+        bidder.addBid(bid);
+        return bid;
+    }
+
+    public static Bid createBid(double amount, LocalDateTime bidTime, Item item, User bidder) {
+        Instant instantBidTime = bidTime.atZone(java.time.ZoneId.systemDefault()).toInstant();
+        Bid bid = new Bid(amount, instantBidTime, item, bidder);
         item.addBid(bid);
         bidder.addBid(bid);
         return bid;

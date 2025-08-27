@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -130,7 +131,7 @@ class AuctionServiceTest {
         User existingUser = createUserWithId(2L);
 
         // Set the deadline to a past time
-        ReflectionTestUtils.setField(existingItem, "deadline", LocalDateTime.now().minusDays(1));
+        ReflectionTestUtils.setField(existingItem, "deadline", getMinusDays());
 
         when(itemRepository.findById(1L)).thenReturn(java.util.Optional.of(existingItem));
         when(userRepository.findById(2L)).thenReturn(java.util.Optional.of(existingUser));
@@ -192,7 +193,7 @@ class AuctionServiceTest {
     }
 
     private Bid createBidWithId(long id, double amount, Item item, User bidder) {
-        Bid bid = Bid.createBid(amount, LocalDateTime.now(), item, bidder);
+        Bid bid = Bid.createBid(amount, Instant.now(), item, bidder);
         ReflectionTestUtils.setField(bid, "id", id);
         return bid;
     }
@@ -244,17 +245,21 @@ class AuctionServiceTest {
     void testCloseExpiredAuctions() {
         Item expiredItem = createItemWithId(1L, "Expired Item", "Expired Description", 100.0);
         expiredItem.changeStatus(AuctionStatus.OPEN);
-        ReflectionTestUtils.setField(expiredItem, "deadline", LocalDateTime.now().minusDays(1));
+        ReflectionTestUtils.setField(expiredItem, "deadline", getMinusDays());
 
-        when(itemRepository.findAllByDeadlineBeforeAndStatus(any(LocalDateTime.class), eq(AuctionStatus.OPEN)))
+        when(itemRepository.findAllByDeadlineBeforeAndStatus(any(Instant.class), eq(AuctionStatus.OPEN)))
                 .thenReturn(List.of(expiredItem));
 
         auctionService.closeExpiredAuctions();
 
-        verify(itemRepository).findAllByDeadlineBeforeAndStatus(any(LocalDateTime.class), eq(AuctionStatus.OPEN));
+        verify(itemRepository).findAllByDeadlineBeforeAndStatus(any(Instant.class), eq(AuctionStatus.OPEN));
         verifyNoMoreInteractions(itemRepository, bidRepository);
 
         assertThat(expiredItem.getStatus()).isEqualTo(AuctionStatus.CLOSED);
+    }
+
+    private static Instant getMinusDays() {
+        return Instant.now().minusSeconds(86400);
     }
 
     @Test
@@ -263,7 +268,7 @@ class AuctionServiceTest {
         Item item = createItemWithId(1L, "Test Item", "Description", 100.0);
         User seller = createUserWithId(2L);
         item.changeStatus(AuctionStatus.OPEN);
-        ReflectionTestUtils.setField(item, "deadline", LocalDateTime.now().minusDays(1));
+        ReflectionTestUtils.setField(item, "deadline", getMinusDays());
 
         User bidder = createUserWithId(3L);
         Bid losingBid = createBidWithId(1L, 200.0, item, bidder);
@@ -271,12 +276,12 @@ class AuctionServiceTest {
         User winningBidder = createUserWithId(4L);
         Bid winningBid = createBidWithId(2L, 250.0, item, winningBidder);
 
-        when(itemRepository.findAllByDeadlineBeforeAndStatus(any(LocalDateTime.class), eq(AuctionStatus.OPEN)))
+        when(itemRepository.findAllByDeadlineBeforeAndStatus(any(Instant.class), eq(AuctionStatus.OPEN)))
                 .thenReturn(List.of(item));
 
         auctionService.closeExpiredAuctions();
 
-        verify(itemRepository).findAllByDeadlineBeforeAndStatus(any(LocalDateTime.class), eq(AuctionStatus.OPEN));
+        verify(itemRepository).findAllByDeadlineBeforeAndStatus(any(Instant.class), eq(AuctionStatus.OPEN));
         verifyNoMoreInteractions(itemRepository, bidRepository);
 
         assertThat(item.getStatus()).isEqualTo(AuctionStatus.CLOSED);

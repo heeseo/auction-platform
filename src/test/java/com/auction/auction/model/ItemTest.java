@@ -2,6 +2,7 @@ package com.auction.auction.model;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.*;
@@ -19,7 +20,7 @@ class ItemTest {
         assertThat(item.getTitle()).isEqualTo("Test Item");
         assertThat(item.getDescription()).isEqualTo("This is a test item.");
         assertThat(item.getMinPrice()).isEqualTo(50.0);
-        assertThat(item.getDeadline()).isAfter(LocalDateTime.now());
+        assertThat(item.getDeadline()).isAfter(Instant.now());
         assertThat(item.getBids()).isEmpty();
     }
 
@@ -32,8 +33,8 @@ class ItemTest {
         Item item = Item.createItem("Test Item", "This is a test item.", 50.0, LocalDateTime.now().plusDays(1), seller);
 
 
-        Bid bid1 = Bid.createBid(100.0, LocalDateTime.now(), item, bidder1);
-        Bid bid2 = Bid.createBid(150.0, LocalDateTime.now(), item, bidder2);
+        Bid bid1 = Bid.createBid(100.0, Instant.now(), item, bidder1);
+        Bid bid2 = Bid.createBid(150.0, Instant.now(), item, bidder2);
 
         assertThat(item.getBids()).hasSize(2);
         assertThat(item.getBids()).contains(bid1, bid2);

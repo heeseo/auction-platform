@@ -2,6 +2,7 @@ package com.auction.auction.model;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.*;
@@ -14,7 +15,7 @@ class BidTest {
 
         Item item = Item.createItem("Test Item", "This is a test item.", 50.0, LocalDateTime.now().plusDays(1), seller);
         User user = User.builder().username("John Doe").email("john@example.com").password("pass").build();
-        Bid bid = Bid.createBid(100.0, LocalDateTime.now(), item, user);
+        Bid bid = Bid.createBid(100.0, Instant.now(), item, user);
 
         assertThat(bid).isNotNull();
         assertThat(bid.getId()).isNull(); // ID should be null before persisting
@@ -31,8 +32,8 @@ class BidTest {
         Item item = Item.createItem("Test Item", "This is a test item.", 50.0, LocalDateTime.now().plusDays(1), seller);
         User user1 = User.builder().username("Jane Doe").email("jane@example.com").password("pass").build();
         User user2 = User.builder().username("John Doe").email("john@example.com").password("pass").build();
-        Bid bid = Bid.createBid(100.0, LocalDateTime.now(), item, user1);
-        Bid bid2 = Bid.createBid(200.0, LocalDateTime.now(), item, user2);
+        Bid bid = Bid.createBid(100.0, Instant.now(), item, user1);
+        Bid bid2 = Bid.createBid(200.0, Instant.now(), item, user2);
 
         assertThat(item).isEqualTo(bid.getItem());
         assertThat(item).isEqualTo(bid2.getItem());
