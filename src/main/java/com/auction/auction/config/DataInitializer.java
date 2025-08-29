@@ -9,9 +9,6 @@ import com.auction.auction.repository.UserRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -24,9 +21,6 @@ import java.time.Instant;
 @Profile("dev")
 @Slf4j
 public class DataInitializer {
-
-
-
 
     private final InitService initService;
 
@@ -57,8 +51,6 @@ public class DataInitializer {
                 User bidder1 = userRepository.findByUsername("user2").orElseThrow();
                 Item item1 = itemRepository.findAll().get(0);
                 Item item2 = itemRepository.findAll().get(1);
-                Item item3 = itemRepository.findAll().get(2);
-                Item item4 = itemRepository.findAll().get(3);
 
 
                 Bid bid1 = Bid.createBid(40.0, Instant.now(), item1, bidder1);
