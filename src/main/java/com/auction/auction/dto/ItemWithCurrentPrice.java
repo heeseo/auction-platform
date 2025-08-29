@@ -9,4 +9,5 @@ import lombok.Getter;
 public class ItemWithCurrentPrice {
     private final Item item;
     private final Double currentPrice;
+    private final Long bidCount;
 }
