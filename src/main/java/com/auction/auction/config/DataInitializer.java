@@ -41,9 +41,14 @@ public class DataInitializer {
         private final BidRepository bidRepository;
 
         public void initDb() {
-            createSampleUsers();
-            createSampleItems();
-            createSampleBids();
+            try {
+                createSampleUsers();
+                createSampleItems();
+                createSampleBids();
+            } catch (Exception e) {
+                log.error("Database initialization failed. Rolling back all changes.", e);
+                throw new RuntimeException("Database initialization failed", e);
+            }
         }
 
         private void createSampleBids() {
