@@ -35,6 +35,7 @@ public class ItemMapper {
                 .imageUrl(item.getImageUrl())      // null 가능
                 .deadline(String.valueOf(item.getDeadline()))
                 .currentPrice(dto.getCurrentPrice())
+                .bidCount(dto.getBidCount())
                 .build();
     }
 

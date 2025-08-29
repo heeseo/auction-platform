@@ -92,6 +92,7 @@ public class AuctionService {
         }
     }
 
+    @Transactional
     private void finalizeAuction(Item item) {
         item.getBids().stream()
                 .max(Comparator.comparingDouble(Bid::getAmount))
@@ -104,7 +105,8 @@ public class AuctionService {
                 .map(item -> {
                     double currentPrice = bidRepository.findMaxAmountByItemId(item.getId())
                             .orElse(item.getMinPrice());
-                    return new ItemWithCurrentPrice(item, currentPrice);
+                    Long bidCount = bidRepository.countByItemId(item.getId());
+                    return new ItemWithCurrentPrice(item, currentPrice, bidCount);
                 })
                 .toList();
     }

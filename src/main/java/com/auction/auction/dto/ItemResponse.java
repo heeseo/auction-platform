@@ -14,10 +14,12 @@ public class ItemResponse {
     private String deadline;
     private Double currentPrice;
     private String highestBidderName;
+    private Long bidCount;
 
     @Builder
     public ItemResponse(Long id, String title, String description, Double minPrice, String category,
-                        String imageUrl, String deadline, Double currentPrice, String highestBidderName) {
+                        String imageUrl, String deadline, Double currentPrice, String highestBidderName,
+                        Long bidCount) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -27,5 +29,7 @@ public class ItemResponse {
         this.deadline = deadline;
         this.currentPrice = currentPrice;
         this.highestBidderName = highestBidderName;
+        this.bidCount = bidCount;
+
     }
 }
