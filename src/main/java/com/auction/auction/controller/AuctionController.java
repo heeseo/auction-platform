@@ -1,5 +1,6 @@
 package com.auction.auction.controller;
 
+import com.auction.auction.dto.BidRequest;
 import com.auction.auction.dto.ItemRequest;
 import com.auction.auction.dto.ItemResponse;
 import com.auction.auction.mapper.ItemMapper;
@@ -57,10 +58,10 @@ public class AuctionController {
     }
 
     @PostMapping("/items/{id}/bids")
-    public Long placeBid(@PathVariable Long id, @RequestParam double bidAmount, @AuthenticationPrincipal User user) {
-        log.info("Placing bid on item with id: {}, bidAmount: {}", id, bidAmount);
+    public Long placeBid(@PathVariable Long id, @RequestBody BidRequest bidRequest, @AuthenticationPrincipal User user) {
+        log.info("Placing bid on item with id: {}, bidAmount: {}", id, bidRequest.getBidAmount());
         log.info("Placing bid by user: {}, {}", user.getId(), user.getUsername());
         // allows users to place a bid on an item in the auction.
-        return auctionService.placeBid(id, bidAmount, user.getId());
+        return auctionService.placeBid(id, bidRequest.getBidAmount(), user.getId());
     }
 }
